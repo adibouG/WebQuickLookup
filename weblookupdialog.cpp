@@ -1,9 +1,9 @@
 #include "weblookupdialog.h"
 #include "ui_weblookupdialog.h"
 
+
 #include <QMimeData>
 #include <QEvent>
-
 #define DEBUG 1
 #define DEFAULTSEARCH_1 "http://google.com/complete/search?output=toolbar&q=%1"
 #define DEFAULTSEARCH_2 "http://google.com/complete/search?output=toolbar&q=%1"
@@ -26,7 +26,7 @@ WebLookupDialog::WebLookupDialog(QWidget *parent) :
     // and trigger an update to the query in the widget to prepare a search
     //connect(_clipboard, &QClipboard::dataChanged, this, &WebLookupDialog::prepareRequest);
     //connect(_clipboard, &QClipboard::selectionChanged, this, &WebLookupDialog::prepareRequest);
-    connect(_clipboard, &QClipboard::changed, this, &WebLookupDialof og::prepareRequest);
+    connect(_clipboard, &QClipboard::changed, this, &WebLookupDialog::prepareRequest);
 
     ui->StartRequestButton->setEnabled(false);
     setState(IDLE);
