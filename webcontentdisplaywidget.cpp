@@ -10,12 +10,12 @@
 #include <QNetworkReply>
 #include <QMenu>
 
-#define DEBUG 1
+#define DEBUG 0
 
-class WebLookupDialog;
+//class WebLookupDialog;
 
 WebContentDisplayWidget::WebContentDisplayWidget(QWidget *parent) :
-    QFrame(parent),
+    QWidget(parent),
     uiDisplay(new Ui::WebContentDisplayWidget)
 {
     uiDisplay->setupUi(this);
@@ -23,7 +23,7 @@ WebContentDisplayWidget::WebContentDisplayWidget(QWidget *parent) :
 
 
 WebContentDisplayWidget::WebContentDisplayWidget(const QUrl &url, const bool api, QWidget *parent) :
-    QFrame(parent),
+    QWidget(parent),
     uiDisplay(new Ui::WebContentDisplayWidget)
 {
     uiDisplay->setupUi(this);

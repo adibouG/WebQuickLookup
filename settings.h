@@ -10,23 +10,21 @@
 
 #include <QFile>
 #include <QVariant>
+#include <QWidget>
 
-QT_BEGIN_NAMESPACE
-namespace Settings { class WebLookupSettings; }
-QT_END_NAMESPACE
-
-class WebLookupSettings : public QObject
+class Settings : public QWidget
 {
     Q_OBJECT
 
 public:
-    WebLookupSettings(QWidget *parent = nullptr);
-    ~WebLookupSettings();
+    Settings(const QWidget *parent = nullptr);
+    ~Settings();
 
-    QMap<QString, QVariant> getSettingsList() { return _settingsList; }
+    QMap<QString, QVariant> settingsList() { return _settingsList; }
+    void setSettingsList(const QMap<QString, QVariant> &m) { _settingsList = m; }
 
 private:
-    void parseSettingFile();
+         // void parseSettingFile();
 
 private:
     QString                 _settingFile;

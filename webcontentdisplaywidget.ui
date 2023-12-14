@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <class>WebContentDisplayWidget</class>
- <widget class="QFrame" name="WebContentDisplayWidget">
+ <widget class="QWidget" name="WebContentDisplayWidget">
   <property name="geometry">
    <rect>
     <x>0</x>

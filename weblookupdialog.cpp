@@ -1,9 +1,13 @@
 #include "weblookupdialog.h"
 #include "ui_weblookupdialog.h"
 
-
 #include <QMimeData>
 #include <QEvent>
+
+#define DEBUG 1
+#define DEFAULTSEARCH_1 "http://google.com/complete/search?output=toolbar&q=%1"
+#define DEFAULTSEARCH_2 "http://google.com/complete/search?output=toolbar&q=%1"
+#define SUPPORTED "text/plain"
 
 WebLookupDialog::WebLookupDialog(QWidget *parent) :
     QWidget(parent),
@@ -14,7 +18,15 @@ WebLookupDialog::WebLookupDialog(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    connect(_clipboard, &QClipboard::changed, this, &WebLookupDialog::prepareRequest);
+
+    _urlList.insert("Google", DEFAULTSEARCH_1);
+    _urlList.insert("Google2", DEFAULTSEARCH_2);
+
+    // We want to catch when content of the clipboard changed (text selection or copy)
+    // and trigger an update to the query in the widget to prepare a search
+    //connect(_clipboard, &QClipboard::dataChanged, this, &WebLookupDialog::prepareRequest);
+    //connect(_clipboard, &QClipboard::selectionChanged, this, &WebLookupDialog::prepareRequest);
+    connect(_clipboard, &QClipboard::changed, this, &WebLookupDialof og::prepareRequest);
 
     ui->StartRequestButton->setEnabled(false);
     setState(IDLE);
@@ -30,66 +42,65 @@ WebLookupDialog::~WebLookupDialog()
     delete ui;
 }
 
-void WebLookupDialog::prepareRequest(QClipboard::Mode)
+void WebLookupDialog::prepareRequest(QClipboard::Mode m)
 {
-    if (_clipboard->text().isEmpty())
+    const QRegularExpression supportedTypes(QString(SUPPORTED)
+                                                    .replace(QChar(', '), QChar('|'))
+                                                    , QRegularExpression::CaseInsensitiveOption);
+    // "text/plain, text/html" => QRegExp("text/plain|text/html")
+
+    if (!_clipboard->mimeData(m)->formats().contains(supportedTypes))
         return;
 
-    //if (ui->QueryTextEditField->text().length()
-    //    && _clipboard->text() == ui->QueryTextEditField->text())
-
-    QString searchText;
-    const QMimeData *mimeData = _clipboard->mimeData();
-    if (mimeData->hasHtml())
-    {
-        searchText= mimeData->html(); //_clipboard->text();
-    }
-    else if (mimeData->hasText())
-    {
-        searchText = mimeData->text();
-    }
-    else if (mimeData->hasImage())
-    {
-        //TODO
-        //replace textEdit with a label to display image
-        //ui->QueryTextEditField->
-        //getPixmap(qvariant_cast<QPixmap>(mimeData->imageData()));
-        //check  search api for image
-    }
-    else
-    {
+    /* We only accept text mime type so far, so no need to check forr and to add image mime type logics */
+    if (!_clipboard->mimeData(m)->hasText() || !_clipboard->text(m).trimmed().length())
         return;
-    }
 
-    //if (searchText != _lastSearch.value())
-    {
-        ui->QueryTextEditField->setText(searchText);
-        ui->QueryTextEditField->setClearButtonEnabled(true);
-        setState(SET);
-    }
+    QString searchText = _clipboard->text(m).trimmed();/*
+    not used simplified() too keep the "pattern/struct" of the string */
 
-    if (ui->QueryAllCheckBox->isChecked())
+    QString::NormalizationForm nf(QString::NormalizationForm_C);    /*
+    to compare string from different sources/origine in UTF8
+    normalized can help when using the correct form of course to get better results
+    no change no need to search ,                                   */
+    if (ui->QueryTextEditField->text().trimmed().normalized(nf).toLower() == searchText.normalized(nf).toLower())
+        return;
+
+    if (DEBUG)
     {
-        // TODO loop throught all urls , qquery each, appending or tabbing the result in display
+        qDebug() << "MimeData formats contained/valid for the clipboard content :\n"<<  _clipboard->mimeData()->formats();
+        qDebug() << "Text/plain conversion of these  Types " << _clipboard->text(m);
     }
-    else
+    /*
+    else if (mimeData->hasImage()) { //TODO ... replace textEdit with a label to display image, getPixmap(qvariant_cast<QPixmap>(mimeData->imageData()));
+    else if (mimeData->hasUrls()) or just else ...>?
+    */
+    ui->QueryTextEditField->setText(searchText);
+    ui->QueryTextEditField->setClearButtonEnabled(true);
+    setState(SET);
+
+    if (!ui->QueryAllCheckBox->isChecked())
     {
         QString url = ui->UrlSelectorField->currentText();
         QUrl reqUrl= QUrl(url);
         reqUrl.setQuery(searchText);
 
         bool isApi = ui->UrlSelectorField->currentText().contains("api");
-
+        // TODO this is not consistent trigger API hint, need better stuff
 
         connect(ui->StartRequestButton, &QAbstractButton::clicked,
             this, [this, reqUrl, isApi] () {
                 startNewRequest(reqUrl, isApi);
+                return  ;
             }
         );
 
         setState(READY);
-        ui->StartRequestButton->setEnabled(true);
+        ui->StartRequestButton->setEnabled(true);    
     }
+    /* TODO else block ui->QueryAllCheckBox->isChecked()) == true:
+     loop throught all urls , qquery each, appending or tabbing the result in display */
+
     return;
 }
 

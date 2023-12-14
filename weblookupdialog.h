@@ -40,7 +40,7 @@ public:
 
 
 public slots:
-    void prepareRequest(QClipboard::Mode);
+    void prepareRequest(QClipboard::Mode m);
     void startNewRequest(const QUrl &url, const bool isApi = false);
     void requestEnded();
     void displayClosed();
@@ -55,6 +55,8 @@ private:
     LookStatus                  _state;      // hold and share the app and seacrh state
     QClipboard*                 _clipboard;  // ptr to the ciipboard
     QVariant                    _lastSearch; // last searched value
+
+    QMap<QString, QString>     _urlList ;
 
 };
 #endif // WEBLOOKUPDIALOG_H

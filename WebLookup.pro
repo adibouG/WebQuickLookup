@@ -12,6 +12,7 @@ INCLUDEPATH += builds
 
 SOURCES += \
     main.cpp \
+    settings.cpp \
     webcontentdisplaywidget.cpp \
     weblookupdialog.cpp
 
