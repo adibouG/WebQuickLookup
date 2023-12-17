@@ -24,7 +24,16 @@ class WebLookupDialog: public QWidget
 {
     Q_OBJECT
 
-    enum LookStatus
+public:
+    struct RequestSetup //TODO move in the setting class
+    {
+        QString     _label;
+        QUrl        _url;
+        bool        _isApi;
+        QStringList _keys;
+    };
+
+    enum struct LookStatus
     {
         UNKNOW,
         IDLE,
@@ -38,6 +47,7 @@ public:
     WebLookupDialog(QWidget *parent = nullptr);
     ~WebLookupDialog();
 
+    RequestSetup requestSetup(const QString &label);
 
 public slots:
     void prepareRequest(QClipboard::Mode m);
@@ -54,9 +64,8 @@ private:
     WebContentDisplayWidget*    _display;    // ptr to the display ui
     LookStatus                  _state;      // hold and share the app and seacrh state
     QClipboard*                 _clipboard;  // ptr to the ciipboard
-    QVariant                    _lastSearch; // last searched value
+    QPair<QString, QStringList>                     _lastSearch; // last searched value
 
     QMap<QString, QString>     _urlList ;
-
 };
 #endif // WEBLOOKUPDIALOG_H

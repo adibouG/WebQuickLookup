@@ -14,13 +14,15 @@ SOURCES += \
     main.cpp \
     settings.cpp \
     webcontentdisplaywidget.cpp \
-    weblookupdialog.cpp
+    weblookupdialog.cpp \
+    webresponseformatter.cpp
 
 HEADERS += \
     settings.h \
     webcontentdisplaywidget.h \
     weblookupdialog.h \
-    weblookuperror.h
+    weblookuperror.h \
+    webresponseformatter.h
 
 FORMS += \
     webcontentdisplaywidget.ui \

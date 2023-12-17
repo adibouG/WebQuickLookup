@@ -1,8 +1,8 @@
 /***********************************************************************
  *
- * WebDisplayWidget:
+ * WebContentDisplayWidget:
  *
- * Receive an url to Load, and display it content
+ * Mini Simplified WebBrowser to load and display an url content
  *
  ***********************************************************************/
 

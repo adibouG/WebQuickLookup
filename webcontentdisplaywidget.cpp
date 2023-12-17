@@ -1,4 +1,12 @@
-﻿#include "webcontentdisplaywidget.h"
+﻿/***********************************************************************
+ *
+ * WebContentDisplayWidget:
+ *
+ * Mini Simplified WebBrowser to load and display an url content
+ *
+ ***********************************************************************/
+
+#include "webcontentdisplaywidget.h"
 #include "ui_webcontentdisplaywidget.h"
 
 #include "weblookuperror.h"
@@ -10,7 +18,7 @@
 #include <QNetworkReply>
 #include <QMenu>
 
-#define DEBUG 0
+#define DEBUG 1
 
 //class WebLookupDialog;
 
