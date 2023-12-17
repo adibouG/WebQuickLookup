@@ -27,8 +27,31 @@ class WebLookupDialog: public QWidget
 public:
     struct LookRequestInit //TODO move in the setting class
     {
+        LookRequestInit(){}
+        LookRequestInit(const QString &label, const QString &word,
+                        const bool &isApi = false, const QStringList &keys = QStringList())
+                    : _label(label), _search(word), _isApi(isApi),_keys(keys)
+        {
+            //_url = QUrl();
+        }
+
         QString     _label;
+        QString     _search;
         QUrl        _url;
+        bool        _isApi = false;
+        QStringList _keys;
+    };
+
+    struct LookRequestSetting //TODO move in the setting class
+    {
+        LookRequestSetting(){}
+        LookRequestSetting(const QString &label, const QString &url,
+                        const bool &isApi = false, const QStringList &keys = QStringList())
+            : _label(label), _url(url), _isApi(isApi),_keys(keys)
+        {}
+
+        QString     _label;
+        QString        _url;
         bool        _isApi = false;
         QStringList _keys;
     };
@@ -48,6 +71,7 @@ public:
     ~WebLookupDialog();
 
     LookRequestInit requestSetup(const QString &label);
+    const QPair<QString, QList<LookRequestInit>> lastSearch() const { return _lastSearch; }
 
 public slots:
     void prepareRequest(QClipboard::Mode m);
@@ -64,8 +88,8 @@ private:
     WebContentDisplayWidget*    _display;    // ptr to the display ui
     LookStatus                  _state;      // hold and share the app and seacrh state
     QClipboard*                 _clipboard;  // ptr to the ciipboard
-    QPair<QString, QStringList>                     _lastSearch; // last searched value
 
-    QMap<QString, QString>     _urlList ;
+    QPair<QString, QList<LookRequestInit>>  _lastSearch; // last searched value
+    QMap<QString, LookRequestSetting>     settingTest ;
 };
 #endif // WEBLOOKUPDIALOG_H

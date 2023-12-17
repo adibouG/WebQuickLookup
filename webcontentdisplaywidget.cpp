@@ -9,6 +9,7 @@
 #include "webcontentdisplaywidget.h"
 #include "ui_webcontentdisplaywidget.h"
 
+#include "weblookupdialog.h"
 #include "weblookuperror.h"
 
 #include <QDomDocument>
@@ -20,7 +21,6 @@
 
 #define DEBUG 1
 
-//class WebLookupDialog;
 
 WebContentDisplayWidget::WebContentDisplayWidget(QWidget *parent) :
     QWebEngineView(parent),
@@ -45,26 +45,26 @@ WebContentDisplayWidget::~WebContentDisplayWidget()
 }
 
 /*
- * StartNewRequest: called automaticcaly once "this" object is constructed
+ * StartNewRequest: called automaticcaly once "this" object is constructed with an url parameter
  * @params:
  *  - url: the url to load provided to the constructor by the parent caller object
  */
-
 void WebContentDisplayWidget::startRequest(const QUrl &url, const bool api)
 {
 
     if (url.isEmpty())
     {
+        //WebLookupDialog* p = qobject_cast<WebLookupDialog*>(parent());
         WebLookupError e("url is missing", objectName());
         return;
     }
-    connect (&_view, &QWebEngineView::loadFinished, this, &WebContentDisplayWidget::displayContent);
+    connect (this, &QWebEngineView::loadFinished, this, &WebContentDisplayWidget::displayContent);
     if (api)
     {
-        startApiRequest(url);
+        startApiRequest(url, QStringList());
         return;
     }
-    _view.load(url);
+    load(url);
     return;
 }
 
@@ -74,7 +74,7 @@ void WebContentDisplayWidget::startRequest(const QUrl &url, const bool api)
  *  - url: the url to load provided to the constructor by the parent caller object
  */
 
-void WebContentDisplayWidget::startApiRequest(const QUrl &url)
+void WebContentDisplayWidget::startApiRequest(const QUrl &url, const QStringList &keys)
 {
     auto* nam = new QNetworkAccessManager(this) ;
     // As we won't access the networkAccessManager at later stages,
@@ -186,22 +186,27 @@ void WebContentDisplayWidget::formatApiResponse(QNetworkReply*  res)
         extractPart.appendChild (eContent);
         qDebug() << hdoc.toString();
     }
-    _view.setHtml(hdoc.toString());//, "text/html" );
-    emit _view.loadFinished(true);
+    setHtml(hdoc.toString());//, "text/html" );
+    emit loadFinished(true);
     //displayContent();
     return;
 }
 
 void WebContentDisplayWidget::displayContent()
 {
-
-    //uiDisplay->gridLayout->addWidget(&_view); // >->itemAtPosition(1,0)->setAlignment(Qt::AlignBottom);
-    uiDisplay->gridLayout->addWidget (&_view, 0, 0, Qt::AlignTop);
+   // WebLookupDialog* searchDial = qobject_cast<WebLookupDialog*>(parent());
+    QWebEngineView * pageView = new QWebEngineView(this);
+   QWebEnginePage* webPage = new QWebEnginePage(this->page());
+    _pageList.append(webPage);
+   pageView->setPage(webPage);
+    //searchDial->lastSearch()    //uiDisplay->gridLayout->addWidget(&_view); // >->itemAtPosition(1,0)->setAlignment(Qt::AlignBottom);
+    uiDisplay->gridLayout_2->addWidget(pageView);  //, this->page()->url().toString());
+        //-gridLayout->addWidget (, 0, 0, Qt::AlignTop);
     qDebug() << "this->size vs sizeHint : " << this->size() << ":::" << sizeHint();
-    qDebug() << "web->size vs sizeHint : " << _view.size() << ":::" << _view.sizeHint();
-    resize (250, _view.sizeHint().height());
+   // qDebug() << "web->size vs sizeHint : " << page->size() << ":::" << page.sizeHint();
+    resize (250, this->sizeHint().height());
     qDebug() << "this->size after reSize: " << this->size() ;
-    _view.show();
+    this->show();
 //    WebLookupDialog* searchUI = qobject_cast<WebLookupDialog*>(parent());
 //    searchUI->requestEnded();
     return;

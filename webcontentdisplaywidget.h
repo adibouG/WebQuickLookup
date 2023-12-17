@@ -33,7 +33,7 @@ public:
     void startRequest(const QUrl &url, const bool api);
 
 private:
-    void startApiRequest(const QUrl &url);
+    void startApiRequest(const QUrl &url, const QStringList &keys);
     void displayContent();
 
 signals:
@@ -45,7 +45,7 @@ private:
 
     Ui::WebContentDisplayWidget*    uiDisplay;
 
-            QWebEngineView          _view;
+    QList<QWebEnginePage*>          _pageList;
 
 };
 
