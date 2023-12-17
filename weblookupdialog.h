@@ -25,15 +25,15 @@ class WebLookupDialog: public QWidget
     Q_OBJECT
 
 public:
-    struct RequestSetup //TODO move in the setting class
+    struct LookRequestInit //TODO move in the setting class
     {
         QString     _label;
         QUrl        _url;
-        bool        _isApi;
+        bool        _isApi = false;
         QStringList _keys;
     };
 
-    enum struct LookStatus
+    enum class LookStatus
     {
         UNKNOW,
         IDLE,
@@ -47,7 +47,7 @@ public:
     WebLookupDialog(QWidget *parent = nullptr);
     ~WebLookupDialog();
 
-    RequestSetup requestSetup(const QString &label);
+    LookRequestInit requestSetup(const QString &label);
 
 public slots:
     void prepareRequest(QClipboard::Mode m);

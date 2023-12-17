@@ -23,7 +23,7 @@
 //class WebLookupDialog;
 
 WebContentDisplayWidget::WebContentDisplayWidget(QWidget *parent) :
-    QWidget(parent),
+    QWebEngineView(parent),
     uiDisplay(new Ui::WebContentDisplayWidget)
 {
     uiDisplay->setupUi(this);
@@ -31,7 +31,7 @@ WebContentDisplayWidget::WebContentDisplayWidget(QWidget *parent) :
 
 
 WebContentDisplayWidget::WebContentDisplayWidget(const QUrl &url, const bool api, QWidget *parent) :
-    QWidget(parent),
+    QWebEngineView(parent),
     uiDisplay(new Ui::WebContentDisplayWidget)
 {
     uiDisplay->setupUi(this);

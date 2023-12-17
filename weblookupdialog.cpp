@@ -5,8 +5,8 @@
 #include <QEvent>
 
 #define DEBUG 1
-#define DEFAULTSEARCH_1 "http://google.com/complete/search?output=toolbar&q=%1"
-#define DEFAULTSEARCH_2 "http://google.com/complete/search?output=toolbar&q=%1"
+#define DEFAULTSEARCH_1 "https://google.com/complete/search?output=toolbar&q=%1"
+#define DEFAULTSEARCH_2 "https://google.com/complete/search?output=toolbar&q=%1"
 #define SUPPORTED "text/plain"
 
 WebLookupDialog::WebLookupDialog(QWidget *parent) :
@@ -22,10 +22,9 @@ WebLookupDialog::WebLookupDialog(QWidget *parent) :
     _urlList.insert("Google", DEFAULTSEARCH_1);
     _urlList.insert("Google2", DEFAULTSEARCH_2);
     /* fill the combo box with the list of label/url to use */
-    for (const auto k : _urlList.keys())
-    {
-        ui->UrlSelectorField->addItem(k);
-    }
+
+    ui->UrlSelectorField->addItems(_urlList.keys());
+
 
     // We want to catch when content of the clipboard changed (text selection or copy)
     // and trigger an update to the query in the widget to prepare a search
@@ -48,9 +47,11 @@ WebLookupDialog::~WebLookupDialog()
 }
 
 
-WebLookupDialog::RequestSetup WebLookupDialog::requestSetup(const QString &label)
+WebLookupDialog::LookRequestInit WebLookupDialog::requestSetup(const QString &label)
 {
-
+    LookRequestInit req;
+    req._label = label;
+    return req;
 }
 
 void WebLookupDialog::prepareRequest(QClipboard::Mode m)

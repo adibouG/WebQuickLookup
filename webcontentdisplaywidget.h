@@ -21,7 +21,7 @@ QT_END_NAMESPACE
 // Forward class def
 class QNetworkReply;
 
-class WebContentDisplayWidget : public QWidget
+class WebContentDisplayWidget : public QWebEngineView//public QWidget,
 {
     Q_OBJECT
     friend class WebLookupDialog;
@@ -45,7 +45,7 @@ private:
 
     Ui::WebContentDisplayWidget*    uiDisplay;
 
-    QWebEngineView                  _view;
+            QWebEngineView          _view;
 
 };
 
