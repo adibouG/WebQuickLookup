@@ -44,7 +44,8 @@ WebLookupDialog::~WebLookupDialog()
     disconnect(ui->StartRequestButton);
 
     _clipboard = nullptr;
-    delete _display;
+    if (_display && _display->close())  delete _display;
+    _display = nullptr;
     delete ui;
 }
 
@@ -125,7 +126,7 @@ void WebLookupDialog::prepareRequest(QClipboard::Mode m)
         );
 
         setState(LookStatus::READY);
-        ui->StartRequestButton->setEnabled(true);    
+        ui->StartRequestButton->setEnabled(true);
     }
     /* TODO else block ui->QueryAllCheckBox->isChecked()) == true:
      loop throught all urls , qquery each, appending or tabbing the result in display */
@@ -139,7 +140,9 @@ void WebLookupDialog::startNewRequest(const QUrl &url, const bool isApi)
     ui->StartRequestButton->setEnabled(false);
 
     qDebug() << "url :" << url.toString() ;
-    _display = new WebContentDisplayWidget(this);
+
+    _display = new WebContentDisplayWidget(nullptr);
+
     connect(_display, &QWebEngineView::loadFinished, this, &WebLookupDialog::requestEnded);
     connect(_display, &WebContentDisplayWidget::destroyed, this, &WebLookupDialog::displayClosed);
     _display->startRequest(url, isApi);

@@ -24,6 +24,7 @@
 
 WebContentDisplayWidget::WebContentDisplayWidget(QWidget *parent) :
     QWebEngineView(parent),
+    //QWidget(parent),
     uiDisplay(new Ui::WebContentDisplayWidget)
 {
     uiDisplay->setupUi(this);
@@ -32,6 +33,7 @@ WebContentDisplayWidget::WebContentDisplayWidget(QWidget *parent) :
 
 WebContentDisplayWidget::WebContentDisplayWidget(const QUrl &url, const bool api, QWidget *parent) :
     QWebEngineView(parent),
+  //  QWidget(parent),
     uiDisplay(new Ui::WebContentDisplayWidget)
 {
     uiDisplay->setupUi(this);
@@ -194,20 +196,14 @@ void WebContentDisplayWidget::formatApiResponse(QNetworkReply*  res)
 
 void WebContentDisplayWidget::displayContent()
 {
-   // WebLookupDialog* searchDial = qobject_cast<WebLookupDialog*>(parent());
-    QWebEngineView * pageView = new QWebEngineView(this);
-   QWebEnginePage* webPage = new QWebEnginePage(this->page());
-    _pageList.append(webPage);
-   pageView->setPage(webPage);
-    //searchDial->lastSearch()    //uiDisplay->gridLayout->addWidget(&_view); // >->itemAtPosition(1,0)->setAlignment(Qt::AlignBottom);
-    uiDisplay->gridLayout_2->addWidget(pageView);  //, this->page()->url().toString());
-        //-gridLayout->addWidget (, 0, 0, Qt::AlignTop);
+    _pageList.append(this->page());
+    //searchDial->lastSearch()
+    uiDisplay->tabContent->addWidget(new QWebEngineView (this->page()));
+
     qDebug() << "this->size vs sizeHint : " << this->size() << ":::" << sizeHint();
    // qDebug() << "web->size vs sizeHint : " << page->size() << ":::" << page.sizeHint();
-    resize (250, this->sizeHint().height());
+    //resize (250, this->sizeHint().height());
     qDebug() << "this->size after reSize: " << this->size() ;
     this->show();
-//    WebLookupDialog* searchUI = qobject_cast<WebLookupDialog*>(parent());
-//    searchUI->requestEnded();
     return;
 }
