@@ -8,7 +8,7 @@
 #ifndef WEBLOOKUPDIALOG_H
 #define WEBLOOKUPDIALOG_H
 
-#include "webcontentdisplaywidget.h"
+#include "settings.h"
 
 //#include "xcb/xcb.h"
 //#include <QAbstractNativeEventFilter>
@@ -16,45 +16,29 @@
 #include <QWidget>
 #include <QClipboard>
 
+#include <QUrl>
+
 QT_BEGIN_NAMESPACE
 namespace Ui { class WebLookupDialog; }
 QT_END_NAMESPACE
 
+
+struct SearchRequest {
+    QString word;
+    QUrl    url;
+    QString  label;
+    bool api = false;
+    QStringList  keys = QStringList();
+};
+
+class WebContentDisplayWidget;
+
+
 class WebLookupDialog: public QWidget
 {
     Q_OBJECT
-
 public:
-    struct LookRequestInit //TODO move in the setting class
-    {
-        LookRequestInit(){}
-        LookRequestInit(const QString &label, const QString &word,
-                        const bool &isApi = false, const QStringList &keys = QStringList())
-                    : _label(label), _search(word), _isApi(isApi),_keys(keys)
-        {
-            //_url = QUrl();
-        }
-
-        QString     _label;
-        QString     _search;
-        QUrl        _url;
-        bool        _isApi = false;
-        QStringList _keys;
-    };
-
-    struct LookRequestSetting //TODO move in the setting class
-    {
-        LookRequestSetting(){}
-        LookRequestSetting(const QString &label, const QString &url,
-                        const bool &isApi = false, const QStringList &keys = QStringList())
-            : _label(label), _url(url), _isApi(isApi),_keys(keys)
-        {}
-
-        QString     _label;
-        QString        _url;
-        bool        _isApi = false;
-        QStringList _keys;
-    };
+    friend class WebContentDisplayWidget;
 
     enum class LookStatus
     {
@@ -70,17 +54,20 @@ public:
     WebLookupDialog(QWidget *parent = nullptr);
     ~WebLookupDialog();
 
-    LookRequestInit requestSetup(const QString &label);
-    const QPair<QString, QList<LookRequestInit>> lastSearch() const { return _lastSearch; }
+    SearchRequest requestSetup(const QString &search, LookRequestSetting set);
+    const QList<SearchRequest> lastSearch() const { return _lastSearch; }
 
 public slots:
     void prepareRequest(QClipboard::Mode m);
-    void startNewRequest(const QUrl &url, const bool isApi = false);
     void requestEnded();
     void displayClosed();
 
+private slots:
+    void startNewRequest(const SearchRequest &s);
+    void appendSearch(int index);
+
 private:
-    void setState(const LookStatus &s) { _state = s; return;}
+    void setState(const LookStatus &s) { _state = s; }
     LookStatus state() const { return _state; }
 
 private:
@@ -89,7 +76,8 @@ private:
     LookStatus                  _state;      // hold and share the app and seacrh state
     QClipboard*                 _clipboard;  // ptr to the ciipboard
 
-    QPair<QString, QList<LookRequestInit>>  _lastSearch; // last searched value
-    QMap<QString, LookRequestSetting>     settingTest ;
+    QList<SearchRequest>  _lastSearch; // last search
+
+    QList<LookRequestSetting>     settingTest;  //will come from settings but added here for dev ease
 };
 #endif // WEBLOOKUPDIALOG_H

@@ -2,12 +2,14 @@
  *
  * WebContentDisplayWidget:
  *
- * Mini Simplified WebBrowser to load and display an url content
+ * Mini WebBrowser loading and displaying preset of urls content
  *
  ***********************************************************************/
 
 #ifndef WEBCONTENTDISPLAYWIDGET_H
 #define WEBCONTENTDISPLAYWIDGET_H
+
+#include "weblookupdialog.h"
 
 #include <QWidget>
 #include <QWebEngineView>
@@ -17,25 +19,23 @@ QT_BEGIN_NAMESPACE
 namespace Ui { class WebContentDisplayWidget; }
 QT_END_NAMESPACE
 
-
 // Forward class def
 class QNetworkReply;
-
-class WebContentDisplayWidget : public QWebEngineView//public QWidget,
+//class SearchRequest;
+class WebContentDisplayWidget : public QWidget
 {
     Q_OBJECT
-    friend class WebLookupDialog;
+
 public:
     explicit WebContentDisplayWidget(QWidget *parent = nullptr);
-    WebContentDisplayWidget(const QUrl &url, const bool api = false, QWidget *parent = nullptr);
+
     ~WebContentDisplayWidget();
-
-    void startRequest(const QUrl &url, const bool api);
-
+    void startRequest(const SearchRequest &s);
+    QWebEngineView* viewer() const { return _viewer; }
 private:
-    void startApiRequest(const QUrl &url, const QStringList &keys);
+    void startApiRequest();
     void displayContent();
-
+//    void formatApiResponse(QNetworkReply*  res, const QStringList &keys);
 signals:
 
 private slots:
@@ -45,7 +45,10 @@ private:
 
     Ui::WebContentDisplayWidget*    uiDisplay;
 
+    QWebEngineView*                 _viewer;
+    SearchRequest            _searchRequest;
     QList<QWebEnginePage*>          _pageList;
+
 
 };
 

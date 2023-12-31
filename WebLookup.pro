@@ -15,6 +15,7 @@ SOURCES += \
     settings.cpp \
     webcontentdisplaywidget.cpp \
     weblookupdialog.cpp \
+    webpageview.cpp \
     webresponseformatter.cpp
 
 HEADERS += \
@@ -22,9 +23,11 @@ HEADERS += \
     webcontentdisplaywidget.h \
     weblookupdialog.h \
     weblookuperror.h \
+    webpageview.h \
     webresponseformatter.h
 
 FORMS += \
+    settingsDialog.ui \
     webcontentdisplaywidget.ui \
     weblookupdialog.ui
 

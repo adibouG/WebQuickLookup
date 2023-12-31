@@ -9,7 +9,6 @@
 #include "webcontentdisplaywidget.h"
 #include "ui_webcontentdisplaywidget.h"
 
-#include "weblookupdialog.h"
 #include "weblookuperror.h"
 
 #include <QDomDocument>
@@ -23,51 +22,47 @@
 
 
 WebContentDisplayWidget::WebContentDisplayWidget(QWidget *parent) :
-    QWebEngineView(parent),
-    //QWidget(parent),
-    uiDisplay(new Ui::WebContentDisplayWidget)
+  QWidget(parent),
+    uiDisplay(new Ui::WebContentDisplayWidget),
+    _viewer(new QWebEngineView(this))
 {
     uiDisplay->setupUi(this);
-}
-
-
-WebContentDisplayWidget::WebContentDisplayWidget(const QUrl &url, const bool api, QWidget *parent) :
-    QWebEngineView(parent),
-  //  QWidget(parent),
-    uiDisplay(new Ui::WebContentDisplayWidget)
-{
-    uiDisplay->setupUi(this);
-    if (!url.isEmpty())
-        startRequest(url, api);
 }
 
 WebContentDisplayWidget::~WebContentDisplayWidget()
 {
+    for (const auto &i : _pageList) delete i ;
+    delete _viewer ;
     delete uiDisplay;
 }
 
 /*
- * StartNewRequest: called automaticcaly once "this" object is constructed with an url parameter
+ * startRequest
  * @params:
  *  - url: the url to load provided to the constructor by the parent caller object
  */
-void WebContentDisplayWidget::startRequest(const QUrl &url, const bool api)
+void WebContentDisplayWidget::startRequest(const SearchRequest &s)
 {
 
-    if (url.isEmpty())
+    if (s.url.isEmpty())
     {
         //WebLookupDialog* p = qobject_cast<WebLookupDialog*>(parent());
         WebLookupError e("url is missing", objectName());
         return;
     }
-    connect (this, &QWebEngineView::loadFinished, this, &WebContentDisplayWidget::displayContent);
-    if (api)
+    _searchRequest = s;
+
+    if (s.api)
     {
-        startApiRequest(url, QStringList());
+        startApiRequest();
         return;
     }
-    load(url);
-    return;
+    else
+    {
+        connect (_viewer, &QWebEngineView::loadFinished, this, &WebContentDisplayWidget::displayContent);
+        _viewer->load(_searchRequest.url);
+        return;
+    }
 }
 
 /*
@@ -76,17 +71,18 @@ void WebContentDisplayWidget::startRequest(const QUrl &url, const bool api)
  *  - url: the url to load provided to the constructor by the parent caller object
  */
 
-void WebContentDisplayWidget::startApiRequest(const QUrl &url, const QStringList &keys)
+void WebContentDisplayWidget::startApiRequest()
 {
-    auto* nam = new QNetworkAccessManager(this) ;
+
+    auto* nam = new QNetworkAccessManager(this);
     // As we won't access the networkAccessManager at later stages,
     // we don't need to store its pointer-ref
     // we leave its destruction to be handled by Qt
     if (DEBUG)
-        connect(nam, &QNetworkAccessManager::destroyed, [] () { qDebug() << "NetworkAccessManager::destroyed"; }) ;
+        connect(nam, &QNetworkAccessManager::destroyed, [this] () { qDebug() << "NetworkAccessManager::destroyed"; }) ;
 
     connect(nam, &QNetworkAccessManager::finished, this, &WebContentDisplayWidget::formatApiResponse);
-    nam->get(QNetworkRequest(url));
+    nam->get(QNetworkRequest(_searchRequest.url));
     return;
 }
 
@@ -188,21 +184,22 @@ void WebContentDisplayWidget::formatApiResponse(QNetworkReply*  res)
         extractPart.appendChild (eContent);
         qDebug() << hdoc.toString();
     }
-    setHtml(hdoc.toString());//, "text/html" );
-    emit loadFinished(true);
+    _viewer->setHtml(hdoc.toString());//, "text/html" );
+    emit _viewer->loadFinished(true);
     //displayContent();
     return;
 }
 
 void WebContentDisplayWidget::displayContent()
 {
-    _pageList.append(this->page());
+    _pageList.append(_viewer->page());
     //searchDial->lastSearch()
-    uiDisplay->tabContent->addWidget(new QWebEngineView (this->page()));
+    uiDisplay->verticalLayout_2->addWidget(_viewer);
+
 
     qDebug() << "this->size vs sizeHint : " << this->size() << ":::" << sizeHint();
-   // qDebug() << "web->size vs sizeHint : " << page->size() << ":::" << page.sizeHint();
     //resize (250, this->sizeHint().height());
+ //   uiDisplay->tabWidget->resize(_viewer->sizeHint()); //pageList.last()->contentsSize());
     qDebug() << "this->size after reSize: " << this->size() ;
     this->show();
     return;

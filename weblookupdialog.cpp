@@ -1,6 +1,7 @@
 #include "weblookupdialog.h"
 #include "ui_weblookupdialog.h"
 
+#include "webcontentdisplaywidget.h"
 #include <QMimeData>
 #include <QEvent>
 
@@ -21,19 +22,20 @@ WebLookupDialog::WebLookupDialog(QWidget *parent) :
 
     // TODO replace with Settings class
     LookRequestSetting s1("Google", QString(DEFAULTSEARCH_1));
+    settingTest << s1;
     LookRequestSetting s2("Wikipedia", QString(DEFAULTSEARCH_2), true);
-    settingTest.insert(s1._label, s1);
-    settingTest.insert(s2._label, s2);
-    // _urlList.insert("Google", DEFAULTSEARCH_1);
-    // _urlList.insert("Google2", DEFAULTSEARCH_2);
-    // /* fill the combo box with the list of label/url to use */
+    settingTest << s2;
 
-    ui->UrlSelectorField->addItems(settingTest.keys());
+    // /* fill the combo box with the list of label/url to use */
+    for (const auto &s : settingTest)
+    {
+        ui->UrlSelectorField->addItem(s.label);
+    }
+
     // We want to catch when content of the clipboard changed (text selection or copy)
-    // and trigger an update to the query in the widget to prepare a search    
-    // connect(_clipboard, &QClipboard::dataChanged, this, &WebLookupDialog::prepareRequest);
-    // connect(_clipboard, &QClipboard::selectionChanged, this, &WebLookupDialog::prepareRequest);
-    connect(_clipboard, &QClipboard::changed, this, &WebLookupDialog::prepareRequest);    
+    // and trigger an update to the query in the widget to prepare a search
+
+    connect(_clipboard, &QClipboard::changed, this, &WebLookupDialog::prepareRequest);
     ui->StartRequestButton->setEnabled(false);
     setState(LookStatus::IDLE);
 }
@@ -44,16 +46,20 @@ WebLookupDialog::~WebLookupDialog()
     disconnect(ui->StartRequestButton);
 
     _clipboard = nullptr;
-    if (_display && _display->close())  delete _display;
+    if (_display)  delete _display;
     _display = nullptr;
     delete ui;
 }
 
 
-WebLookupDialog::LookRequestInit WebLookupDialog::requestSetup(const QString &label)
+SearchRequest WebLookupDialog::requestSetup(const QString &search, LookRequestSetting set)
 {
-    LookRequestInit req;
-    req._label = label;
+    SearchRequest req;
+    req.label = set.label;
+    req.api = set.api;
+    req.word = search;
+    req.url = QUrl(set.url.arg(search));
+    req.keys = set.keys;
     return req;
 }
 
@@ -84,68 +90,76 @@ void WebLookupDialog::prepareRequest(QClipboard::Mode m)
 
     qDebug() << "previous text :" << ui->QueryTextEditField->text().trimmed().toLower();
     qDebug() << "new text :" << searchText.toLower();
-    qDebug() << "normalized form :" << nf;
-    qDebug() << "previous text normalized :" << ui->QueryTextEditField->text().trimmed().toLower().normalized(nf);
-    qDebug() << "new text normalized form :" << searchText.toLower().normalized(nf);
 
     qDebug() << "MimeData to text : ";
-    qDebug() << "MimeData formats contained/valid for the clipboard content :\n"<<  _clipboard->mimeData()->formats();
+    qDebug() << "MimeData formats contained/valid for the clipboard content :\n" <<  _clipboard->mimeData()->formats();
     qDebug() << "Text/plain conversion of these  Types " << _clipboard->text(m);
-
-    qDebug() << "settingTest size : " << settingTest.size();
 
 #endif
 
-    /* TODO
+    /* TODOWebContentDisplayWidget
     image suport replace textEdit with a label to display image,
     else if (mimeData->hasImage()) { getPixmap(qvariant_cast<QPixmap>(mimeData->imageData())); }
     else if (mimeData->hasUrls()) or just else ...>?    */
-
+    ui->QueryTextEditField->clear();
     ui->QueryTextEditField->setText(searchText);
     ui->QueryTextEditField->setClearButtonEnabled(true);
     setState(LookStatus::SET);
 
-    if (!ui->QueryAllCheckBox->isChecked())
-    {
-        QString key = ui->UrlSelectorField->currentText();
-        qDebug() << "key to use: " << key;
-        qDebug() << "Url to use: " << settingTest.value(key)._url;
-        QUrl reqUrl= QUrl(settingTest.value(key)._url.arg(searchText));
 
-        bool isApi = settingTest.value(key)._isApi;
-        // TODO this is not consistent API hint, need better stuff, might come from settings
+    LookRequestSetting keySetting = settingTest.at(ui->UrlSelectorField->currentIndex());
+    qDebug() << "selected index: " << ui->UrlSelectorField->currentIndex();
+    qDebug() << "key to use: " << keySetting.label;
+    qDebug() << "Url to use: " << keySetting.url;
 
-        connect(ui->StartRequestButton, &QAbstractButton::clicked,
-            this, [this, searchText, key, reqUrl, isApi] () {
 
-//                _lastSearch.first = searchText;
-  //          _lastSearch.second = QList({key});
-                startNewRequest(reqUrl, isApi);
-                return  ;
-            }
-        );
 
-        setState(LookStatus::READY);
-        ui->StartRequestButton->setEnabled(true);
-    }
+   // TODO this is not consistent API hint, need better stuff, might come from settings
+
+    connect(ui->StartRequestButton, &QAbstractButton::clicked, this,
+        [this, searchText, keySetting] () {
+            SearchRequest s = requestSetup(searchText, keySetting);
+            startNewRequest(s);
+            return;
+    });
+
+    setState(LookStatus::READY);
+    ui->StartRequestButton->setEnabled(true);
+
     /* TODO else block ui->QueryAllCheckBox->isChecked()) == true:
      loop throught all urls , qquery each, appending or tabbing the result in display */
 
     return;
 }
 
-void WebLookupDialog::startNewRequest(const QUrl &url, const bool isApi)
+void WebLookupDialog::startNewRequest(const SearchRequest &s)
 {
-    setState(LookStatus::LOADING);
-    ui->StartRequestButton->setEnabled(false);
 
-    qDebug() << "url :" << url.toString() ;
+    qDebug() << "url :" << s.url.toString() ;
 
+//    ui->QueryTextEditField->setEnabled(false);
+    if (_display)
+    {
+        _display->viewer()->close();
+        delete _display;
+    }
     _display = new WebContentDisplayWidget(nullptr);
+    /*else
+    {
+        auto*` prev = new QWebEngineView (_display);
+        _display = prev->viewer()->createWindow(QWebEnginePage::WebBrowserTab);
 
-    connect(_display, &QWebEngineView::loadFinished, this, &WebLookupDialog::requestEnded);
+    }
+    */
+    connect(_display->viewer(), &QWebEngineView::loadFinished, this, &WebLookupDialog::requestEnded);
     connect(_display, &WebContentDisplayWidget::destroyed, this, &WebLookupDialog::displayClosed);
-    _display->startRequest(url, isApi);
+
+    setState(LookStatus::LOADING);
+    ui->QueryTextEditField->setReadOnly(true);
+    ui->StartRequestButton->setEnabled(false);
+    _lastSearch.clear();
+    _lastSearch << s;
+    _display->startRequest(s);
 
     return;
 }
@@ -153,11 +167,36 @@ void WebLookupDialog::startNewRequest(const QUrl &url, const bool isApi)
 void WebLookupDialog::requestEnded()
 {
     setState(LookStatus::DONE);
+    ui->QueryTextEditField->setReadOnly(false);
+
+    connect(ui->UrlSelectorField, &QComboBox::currentIndexChanged, this, &WebLookupDialog::appendSearch);
+    return;
+}
+
+void WebLookupDialog::appendSearch(int index)
+{
+    setState(LookStatus::SET);
+    auto prev = _lastSearch.last();
+    auto word = ui->QueryTextEditField->text();
+    auto reqSet  = requestSetup (word,  settingTest.at(index));
+    if (prev.word != word)
+    {
+        startNewRequest(reqSet);
+    }
+    else if (reqSet.url == prev.url)
+    {
+    }
+    else
+    {
+        startNewRequest(reqSet);
+    }
     return;
 }
 
 
+
 void WebLookupDialog::displayClosed()
 {
+
     _display = nullptr;
 }

@@ -1,13 +1,13 @@
 #include "settings.h"
 
 
-Settings::Settings (const QWidget* parent)
+SettingsDialog::SettingsDialog (const QWidget* parent)
 {
 
 
 }
 
-Settings::~Settings ()
+SettingsDialog::~SettingsDialog ()
 {
 
 
