@@ -14,6 +14,8 @@
 #include <QWidget>
 #include <QWebEngineView>
 
+#include <QDomDocument>
+#include <QJsonDocument>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class WebContentDisplayWidget; }
@@ -35,7 +37,11 @@ public:
 private:
     void startApiRequest();
     void displayContent();
-//    void formatApiResponse(QNetworkReply*  res, const QStringList &keys);
+    // void formatApiResponse(QNetworkReply*  res, const QStringList &keys);
+
+    QDomElement json2Dom (const QJsonValue &val, QDomDocument doc = QDomDocument(), int depth = 1,
+                        const QDomElement &base = QDomElement(), const bool &useTitleKey = false, const QStringList &selection = QStringList());
+
 signals:
 
 private slots:

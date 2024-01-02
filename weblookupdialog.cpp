@@ -188,7 +188,7 @@ void WebLookupDialog::appendSearch(int index)
     }
     else
     {
-        startNewRequest(reqSet);
+        startNewRequest(reqSet); // TODO: the append result in the same page or in a tab
     }
     return;
 }

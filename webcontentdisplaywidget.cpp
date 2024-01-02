@@ -1,4 +1,4 @@
-﻿/***********************************************************************
+/***********************************************************************
  *
  * WebContentDisplayWidget:
  *
@@ -11,9 +11,8 @@
 
 #include "weblookuperror.h"
 
-#include <QDomDocument>
-#include <QJsonDocument>
 #include <QJsonObject>
+#include <QJsonArray>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QMenu>
@@ -81,6 +80,15 @@ void WebContentDisplayWidget::startApiRequest()
     if (DEBUG)
         connect(nam, &QNetworkAccessManager::destroyed, [this] () { qDebug() << "NetworkAccessManager::destroyed"; }) ;
 
+    connect(nam, &QNetworkAccessManager::sslErrors, this, [](QNetworkReply* res, const QList<QSslError> errors) {
+            for (const auto &s : errors)
+            {
+                qDebug() << "ssl error : " << s .error() << " " <<  s.errorString() ;
+            }
+            return;// TODO: message box with  continue / cancel option
+        }
+    );
+
     connect(nam, &QNetworkAccessManager::finished, this, &WebContentDisplayWidget::formatApiResponse);
     nam->get(QNetworkRequest(_searchRequest.url));
     return;
@@ -95,12 +103,30 @@ void WebContentDisplayWidget::formatApiResponse(QNetworkReply*  res)
 
     if (DEBUG)
     {
-        connect(res, &QNetworkReply::finished, [] () { qDebug() << "QNetworkReply::finished"; }) ;
-        connect(res, &QNetworkReply::destroyed, [] () { qDebug() << "QNetworkReply::destroyed"; }) ;
+         connect(res, &QNetworkReply::destroyed, [] () { qDebug() << "QNetworkReply::destroyed"; }) ;
     }
 
-    if (res->error())
-        qDebug() << " received error " << res->errorString();
+
+    QVariant statusCode = res->attribute(QNetworkRequest::HttpStatusCodeAttribute);
+    if (!statusCode.isNull())
+    {
+        qDebug() << " NetworkRequest HttpStatusCodeAttribute :" << statusCode.toInt() << " " << res->attribute(QNetworkRequest::HttpReasonPhraseAttribute).toByteArray();
+
+        if (statusCode.toInt() >= 400)
+        {
+
+            if (res->error() != QNetworkReply::NoError) qDebug() << " received error " << res->errorString();
+            return ; // TODO : handle the issue
+
+        }
+        else if (statusCode.toInt() >= 300)
+        {
+
+            return;
+
+        }
+        // we have a 200
+    }
 
     // response data processing
     // TODO look header for erwsponse type and format
@@ -115,80 +141,213 @@ void WebContentDisplayWidget::formatApiResponse(QNetworkReply*  res)
     // Debug log the http response body
     if (DEBUG) qDebug() << " data  \n" <<  data;
 
+    QDomDocument hdoc;// the data returned (json usually) will be parsed and used to build a dom / html document
+    QDomElement html = hdoc.createElement("html");
+    hdoc.appendChild(html);
+    QDomElement root = hdoc.createElement("body");
+    html.appendChild(root);
+    QDomElement searchTitlePart = hdoc.createElement("div");
+    root.appendChild(searchTitlePart);
+    QDomElement tH1 = hdoc.createElement("h1");
+    searchTitlePart.appendChild(tH1);
+    QDomText searchTitle = hdoc.createTextNode(QString("Result for %1 from  %2").arg(_searchRequest.word, _searchRequest.label));
+    tH1.appendChild(searchTitle);
 
-    QDomDocument hdoc; // the data returned (json usually) will be parsed and used to build a dom / html document
+    QVariant contentType = res->header(QNetworkRequest::ContentTypeHeader) ;
 
-    //TODO  check body data mime type
-    if (res->url().toString().contains("wiki"))
+    if (!contentType.isNull() && contentType.toString().contains("json"))
     {
-        QJsonDocument jdoc = QJsonDocument::fromJson(data);
-        QString title;
-        QString description;
-        QString image;
-        QString textExtract;
-        QString linkToHtml;
-        if (!jdoc.isEmpty())
-        {
-            title = jdoc["title"].toString();
-            description = jdoc["description"].toString();
-            image = jdoc["thumbnail"].toObject().value("source").toString();
-            textExtract = jdoc["extract_html"].toString();
-            linkToHtml = jdoc["content_urls"].toObject()
-                             .value("desktop").toObject()
-                             .value("page").toString();
+        QJsonParseError* p = new QJsonParseError();
 
+        QJsonDocument jdoc = QJsonDocument::fromJson(data, p);
+
+        if (p->error != QJsonParseError::NoError)
+        {
+            qDebug() << "Json parse error : " << p->errorString();
         }
 
-        QDomElement html = hdoc.createElement("html");
-        hdoc.appendChild(html);
-        QDomElement root = hdoc.createElement("body");
-        html.appendChild(root);
-        QDomElement titlePart = hdoc.createElement("div");
-        root.appendChild(titlePart);
-        QDomElement tH2 = hdoc.createElement("h2");
-        titlePart.appendChild(tH2);
-        QDomText titleContent = hdoc.createTextNode(title);
-        tH2.appendChild(titleContent);
+        if (this->_searchRequest.label.contains("wiki"))
+        {
+            QString title;
+            QString description;
+            QString image;
+            QString textExtract;
+            QString linkToHtml;
+            if (!jdoc.isEmpty())
+            {
+                title = jdoc["title"].toString();
+                description = jdoc["description"].toString();
+                image = jdoc["thumbnail"].toObject().value("source").toString();
+                textExtract = jdoc["extract_html"].toString();
+                linkToHtml = jdoc["content_urls"].toObject()
+                                 .value("desktop").toObject()
+                                 .value("page").toString();
 
-        QDomElement descPart = hdoc.createElement("div");
-        QDomElement dP = hdoc.createElement("p");
-        QDomText descContent = hdoc.createTextNode(description);
-
-        root.appendChild(descPart);
-        descPart.appendChild(dP);
-        dP.appendChild(descContent);
-
-        QDomElement br = hdoc.createElement("br");
-        descPart.appendChild(br);
-
-        QDomElement img = hdoc.createElement("image");
-        img.setAttribute("src", image);
-        img.setAttribute("width", "20%") ;
-        descPart.appendChild(img);
+            }
 
 
-        QDomElement link = hdoc.createElement("a");
-        link.setAttribute("href", linkToHtml);
-        QDomText linkContent = hdoc.createTextNode("link to article...");
-        link.appendChild(linkContent);
-        descPart.appendChild(link);
+            QDomElement titlePart = hdoc.createElement("div");
+            root.appendChild(titlePart);
+            QDomElement tH2 = hdoc.createElement("h2");
+            titlePart.appendChild(tH2);
+            QDomText titleContent = hdoc.createTextNode(title);
+            tH2.appendChild(titleContent);
+
+            QDomElement descPart = hdoc.createElement("div");
+            QDomElement dP = hdoc.createElement("p");
+            QDomText descContent = hdoc.createTextNode(description);
+
+            root.appendChild(descPart);
+            descPart.appendChild(dP);
+            dP.appendChild(descContent);
+
+            QDomElement br = hdoc.createElement("br");
+            descPart.appendChild(br);
+
+            QDomElement img = hdoc.createElement("image");
+            img.setAttribute("src", image);
+            img.setAttribute("width", "20%") ;
+            descPart.appendChild(img);
 
 
-        QDomElement extractPart = hdoc.createElement("div");
-        root.appendChild(extractPart);
+            QDomElement link = hdoc.createElement("a");
+            link.setAttribute("href", linkToHtml);
+            QDomText linkContent = hdoc.createTextNode("link to article...");
+            link.appendChild(linkContent);
+            descPart.appendChild(link);
 
-        QDomDocument eContent ;
 
-        eContent.setContent(textExtract) ;
-        qDebug() << eContent.toString();
-        extractPart.appendChild (eContent);
-        qDebug() << hdoc.toString();
+            QDomElement extractPart = hdoc.createElement("div");
+            root.appendChild(extractPart);
+
+            QDomDocument eContent ;
+
+            eContent.setContent(textExtract) ;
+            qDebug() << eContent.toString();
+            extractPart.appendChild (eContent);
+        }
+        else
+        {
+            auto el = json2Dom(QJsonValue::fromVariant(jdoc.toVariant()), hdoc);
+            root.appendChild(el);
+        }
     }
+    qDebug() << hdoc.toString();
     _viewer->setHtml(hdoc.toString());//, "text/html" );
     emit _viewer->loadFinished(true);
     //displayContent();
     return;
 }
+
+
+QDomElement WebContentDisplayWidget::json2Dom (const QJsonValue &val, QDomDocument doc, int depth,
+                                            const QDomElement &base, const bool &useTitleKey, const QStringList &selection)
+{
+    if (val.isNull() || val.isUndefined())
+        return base;
+
+    QDomElement baseElement = base;
+    if (base.isNull())
+        baseElement.setTagName("div");
+
+    if (val.isArray())
+    {
+        QJsonArray arr = val.toArray();
+
+        if (!arr.size())
+            return base;
+
+
+        for (const auto &i : arr)
+        {
+            auto el = json2Dom(i, doc, depth, baseElement);
+            if (!el.isNull())
+                baseElement.appendChild(el);
+        } // for
+    } //
+    else if (val.isString() && val.toString().length())
+    {
+        QString text = val.toString();
+        if (text.contains(QRegularExpression("(<[a-z]{1,9}[1-9]{0,1}>)"))) // check if text contains html style tags
+        {
+            QDomDocument content ;
+            content.setContent(text) ;
+            qDebug() << content.toString();
+            baseElement.appendChild (content);
+        }
+        else if (text.startsWith("https://")) // check if this is an image url
+        {
+            auto mimetype = QStringList() << ".tiff" << ".webp" << ".svg"<< ".jpeg" << ".jpg" << ".png";
+            for (const auto &t : mimetype) // for
+            {
+                if (text.endsWith(t) && QUrl(text).isValid()) // if
+                {
+                    QDomElement img = doc.createElement("image");
+                    img.setAttribute("src", text);
+                    img.setAttribute("width", "20%") ;
+                    baseElement.appendChild(img);
+                    break;
+                } // __________________// if
+            } // ____________________________// for
+        }
+        else
+        {
+            QDomElement textElement = doc.createElement("p");
+            QDomText textContent = doc.createTextNode(text);
+            textElement.appendChild(textContent);
+            baseElement.appendChild(textElement);
+        }
+    } // else if
+    else if (val.isObject())
+    {
+        QJsonObject obj = val.toObject();
+
+        bool addElement = false;
+        bool addTitle = false;
+        bool addSection = false;
+
+        for (const auto &k : obj.keys())
+        {
+            QJsonValue v = obj.value(k);
+
+            if (v.isNull() || v.isUndefined())
+                continue;
+
+            if (selection.length() && !selection.contains(k))
+                continue;
+
+            QString text;
+            QString titleValue = k;
+            QString titleElementValue = QString("h%1").arg(++depth);
+            //check that this key value can be used as title
+            if (useTitleKey && k.contains("title", Qt::CaseInsensitive) && obj.value(k).isString())
+            {
+                addTitle = true;
+                addElement = true;
+                titleValue = QString("[%1] %2").arg(k, obj.value(k).toString());
+                QDomElement titleElement = doc.createElement(titleElementValue);
+                QDomText titleContent = doc.createTextNode(titleValue);
+                titleElement.appendChild(titleContent);
+                baseElement.appendChild(titleElement);
+            }
+            else
+            {
+                QDomElement titleElement = doc.createElement(titleElementValue);
+                QDomText titleContent = doc.createTextNode(titleValue);
+                titleElement.appendChild(titleContent);
+                baseElement.appendChild(titleElement);
+                auto el = json2Dom(v, doc, depth, baseElement);
+                if (!el.isNull())
+                    baseElement.appendChild(el);
+
+            }
+        }
+
+    }
+    return baseElement;
+
+}
+
 
 void WebContentDisplayWidget::displayContent()
 {
