@@ -21,9 +21,9 @@ WebLookupDialog::WebLookupDialog(QWidget *parent) :
     ui->setupUi(this);
 
     // TODO replace with Settings class
-    LookRequestSetting s1("Google", QString(DEFAULTSEARCH_1));
+    Settings::LookRequestSetting s1("Google", QString(DEFAULTSEARCH_1));
     settingTest << s1;
-    LookRequestSetting s2("Wikipedia", QString(DEFAULTSEARCH_2), true);
+    Settings::LookRequestSetting s2("Wikipedia", QString(DEFAULTSEARCH_2), true);
     settingTest << s2;
 
     // /* fill the combo box with the list of label/url to use */
@@ -52,7 +52,7 @@ WebLookupDialog::~WebLookupDialog()
 }
 
 
-SearchRequest WebLookupDialog::requestSetup(const QString &search, LookRequestSetting set)
+SearchRequest WebLookupDialog::requestSetup(const QString &search, Settings::LookRequestSetting set)
 {
     SearchRequest req;
     req.label = set.label;
@@ -107,21 +107,8 @@ void WebLookupDialog::prepareRequest(QClipboard::Mode m)
     setState(LookStatus::SET);
 
 
-    LookRequestSetting keySetting = settingTest.at(ui->UrlSelectorField->currentIndex());
-    qDebug() << "selected index: " << ui->UrlSelectorField->currentIndex();
-    qDebug() << "key to use: " << keySetting.label;
-    qDebug() << "Url to use: " << keySetting.url;
 
-
-
-   // TODO this is not consistent API hint, need better stuff, might come from settings
-
-    connect(ui->StartRequestButton, &QAbstractButton::clicked, this,
-        [this, searchText, keySetting] () {
-            SearchRequest s = requestSetup(searchText, keySetting);
-            startNewRequest(s);
-            return;
-    });
+    connect(ui->StartRequestButton, &QAbstractButton::clicked, this, &WebLookupDialog::startNewRequest);
 
     setState(LookStatus::READY);
     ui->StartRequestButton->setEnabled(true);
@@ -132,33 +119,41 @@ void WebLookupDialog::prepareRequest(QClipboard::Mode m)
     return;
 }
 
-void WebLookupDialog::startNewRequest(const SearchRequest &s)
+void WebLookupDialog::startNewRequest(bool append = false )
 {
+    Settings::LookRequestSetting keySetting = settingTest.at(ui->UrlSelectorField->currentIndex());
+    qDebug() << "selected index: " << ui->UrlSelectorField->currentIndex();
+    qDebug() << "key to use: " << keySetting.label;
+    qDebug() << "Url to use: " << keySetting.url;
+
+    SearchRequest s = requestSetup(ui->QueryTextEditField->text(), keySetting);
+
+
 
     qDebug() << "url :" << s.url.toString() ;
 
 //    ui->QueryTextEditField->setEnabled(false);
-    if (_display)
+    if (!_display)
     {
-        _display->viewer()->close();
-        delete _display;
+        //_display->viewer()->createWindow(QWebEnginePage::WebBrowserTab);
+        _display = new WebContentDisplayWidget(nullptr);
     }
-    _display = new WebContentDisplayWidget(nullptr);
-    /*else
+    if (!append)
     {
-        auto*` prev = new QWebEngineView (_display);
-        _display = prev->viewer()->createWindow(QWebEnginePage::WebBrowserTab);
+        _lastSearch.clear();
+    }
 
-    }
-    */
     connect(_display->viewer(), &QWebEngineView::loadFinished, this, &WebLookupDialog::requestEnded);
     connect(_display, &WebContentDisplayWidget::destroyed, this, &WebLookupDialog::displayClosed);
+//    connect(_display, &WebContentDisplayWidget::error, this, &WebLookupDialog::displayClosed);
 
     setState(LookStatus::LOADING);
     ui->QueryTextEditField->setReadOnly(true);
     ui->StartRequestButton->setEnabled(false);
-    _lastSearch.clear();
+
     _lastSearch << s;
+
+    _display->setAppendResult(append);
     _display->startRequest(s);
 
     return;
@@ -179,16 +174,14 @@ void WebLookupDialog::appendSearch(int index)
     auto prev = _lastSearch.last();
     auto word = ui->QueryTextEditField->text();
     auto reqSet  = requestSetup (word,  settingTest.at(index));
+
     if (prev.word != word)
     {
-        startNewRequest(reqSet);
+        startNewRequest(false);
     }
-    else if (reqSet.url == prev.url)
+    else if (reqSet.url != prev.url)
     {
-    }
-    else
-    {
-        startNewRequest(reqSet); // TODO: the append result in the same page or in a tab
+        startNewRequest(true); // TODO: the append result in the same page or in a tab
     }
     return;
 }

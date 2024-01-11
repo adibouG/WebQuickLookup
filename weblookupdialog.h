@@ -54,7 +54,7 @@ public:
     WebLookupDialog(QWidget *parent = nullptr);
     ~WebLookupDialog();
 
-    SearchRequest requestSetup(const QString &search, LookRequestSetting set);
+    SearchRequest requestSetup(const QString &search, Settings::LookRequestSetting set);
     const QList<SearchRequest> lastSearch() const { return _lastSearch; }
 
 public slots:
@@ -63,7 +63,7 @@ public slots:
     void displayClosed();
 
 private slots:
-    void startNewRequest(const SearchRequest &s);
+    void startNewRequest(bool append);
     void appendSearch(int index);
 
 private:
@@ -78,6 +78,6 @@ private:
 
     QList<SearchRequest>  _lastSearch; // last search
 
-    QList<LookRequestSetting>     settingTest;  //will come from settings but added here for dev ease
+    QList<Settings::LookRequestSetting>     settingTest;  //will come from settings but added here for dev ease
 };
 #endif // WEBLOOKUPDIALOG_H

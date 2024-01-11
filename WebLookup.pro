@@ -8,18 +8,22 @@ CONFIG += c++17
 # In order to do so, uncomment the following line.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
-INCLUDEPATH += builds
-
 SOURCES += \
+    jsontodomconverter.cpp \
     main.cpp \
     settings.cpp \
+    settingsdialog.cpp \
+    systemtraywrapper.cpp \
     webcontentdisplaywidget.cpp \
     weblookupdialog.cpp \
     webpageview.cpp \
     webresponseformatter.cpp
 
 HEADERS += \
+    jsontodomconverter.h \
     settings.h \
+    settingsdialog.h \
+    systemtraywrapper.h \
     webcontentdisplaywidget.h \
     weblookupdialog.h \
     weblookuperror.h \
@@ -27,7 +31,8 @@ HEADERS += \
     webresponseformatter.h
 
 FORMS += \
-    settingsDialog.ui \
+    settingsdialog.ui \
+    settingsdialog.ui \
     webcontentdisplaywidget.ui \
     weblookupdialog.ui
 
@@ -39,4 +44,8 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 DISTFILES += \
-    README.md
+    README.md \
+    img/
+
+RESOURCES += \
+    systrayicon.qrc

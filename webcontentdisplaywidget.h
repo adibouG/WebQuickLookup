@@ -34,6 +34,8 @@ public:
     ~WebContentDisplayWidget();
     void startRequest(const SearchRequest &s);
     QWebEngineView* viewer() const { return _viewer; }
+    void setAppendResult(const bool &t)   { _appendResult = t; }
+
 private:
     void startApiRequest();
     void displayContent();
@@ -42,6 +44,7 @@ private:
     QDomElement json2Dom (const QJsonValue &val, QDomDocument doc = QDomDocument(), int depth = 1,
                         const QDomElement &base = QDomElement(), const bool &useTitleKey = false, const QStringList &selection = QStringList());
 
+
 signals:
 
 private slots:
@@ -49,12 +52,12 @@ private slots:
 
 private:
 
-    Ui::WebContentDisplayWidget*    uiDisplay;
+    Ui::WebContentDisplayWidget*    ui;
 
     QWebEngineView*                 _viewer;
     SearchRequest            _searchRequest;
     QList<QWebEnginePage*>          _pageList;
-
+    bool                _appendResult = false;
 
 };
 

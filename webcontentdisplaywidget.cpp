@@ -22,17 +22,17 @@
 
 WebContentDisplayWidget::WebContentDisplayWidget(QWidget *parent) :
   QWidget(parent),
-    uiDisplay(new Ui::WebContentDisplayWidget),
+    ui(new Ui::WebContentDisplayWidget),
     _viewer(new QWebEngineView(this))
 {
-    uiDisplay->setupUi(this);
+    ui->setupUi(this);
 }
 
 WebContentDisplayWidget::~WebContentDisplayWidget()
 {
     for (const auto &i : _pageList) delete i ;
     delete _viewer ;
-    delete uiDisplay;
+    delete ui;
 }
 
 /*
@@ -154,11 +154,12 @@ void WebContentDisplayWidget::formatApiResponse(QNetworkReply*  res)
     tH1.appendChild(searchTitle);
 
     QVariant contentType = res->header(QNetworkRequest::ContentTypeHeader) ;
+    qDebug() << "contentType : " << contentType.toString();
 
     if (!contentType.isNull() && contentType.toString().contains("json"))
     {
         QJsonParseError* p = new QJsonParseError();
-
+ qDebug() << "contentType : " << contentType.toString();
         QJsonDocument jdoc = QJsonDocument::fromJson(data, p);
 
         if (p->error != QJsonParseError::NoError)
@@ -166,7 +167,7 @@ void WebContentDisplayWidget::formatApiResponse(QNetworkReply*  res)
             qDebug() << "Json parse error : " << p->errorString();
         }
 
-        if (this->_searchRequest.label.contains("wiki"))
+        if (this->_searchRequest.label.contains("wiki", Qt::CaseInsensitive))
         {
             QString title;
             QString description;
@@ -248,7 +249,7 @@ QDomElement WebContentDisplayWidget::json2Dom (const QJsonValue &val, QDomDocume
 
     QDomElement baseElement = base;
     if (base.isNull())
-        baseElement.setTagName("div");
+        baseElement = doc.createElement("div");
 
     if (val.isArray())
     {
@@ -342,10 +343,8 @@ QDomElement WebContentDisplayWidget::json2Dom (const QJsonValue &val, QDomDocume
 
             }
         }
-
     }
     return baseElement;
-
 }
 
 
@@ -353,7 +352,7 @@ void WebContentDisplayWidget::displayContent()
 {
     _pageList.append(_viewer->page());
     //searchDial->lastSearch()
-    uiDisplay->verticalLayout_2->addWidget(_viewer);
+    ui->verticalLayout_2->addWidget(_viewer);
 
 
     qDebug() << "this->size vs sizeHint : " << this->size() << ":::" << sizeHint();

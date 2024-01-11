@@ -1,0 +1,8 @@
+<RCC>
+    <qresource prefix="/">
+        <file>img/16x16/logviewer.png</file>
+        <file>img/24x24/logviewer.png</file>
+        <file>img/32x32/logviewer.png</file>
+        <file>img/48x48/logviewer.png</file>
+    </qresource>
+</RCC>
