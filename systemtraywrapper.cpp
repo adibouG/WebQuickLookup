@@ -13,3 +13,42 @@ SystemTrayWrapper::SystemTrayWrapper(QWidget *parent)
     connect(trayIcon, &QSystemTrayIcon::activated, this, &SystemTrayWrapper::iconActivated);
 }
 
+SystemTrayWrapper::~SystemTrayWrapper()
+{
+    disconnect(trayIcon, &QSystemTrayIcon::activated, this, &SystemTrayWrapper::iconActivated);
+    if (trayIcon) delete trayIcon;
+    if (trayIconMenu) delete trayIconMenu;
+    if (_sysTrayedChildWidget) delete _sysTrayedChildWidget;
+}
+
+void SystemTrayWrapper::iconActivated(QSystemTrayIcon::ActivationReason /*reason*/)
+{
+
+
+}
+
+void SystemTrayWrapper::showSearchDialog()
+{
+
+
+}
+
+
+void SystemTrayWrapper::showSettingsDialog()
+{
+
+
+}
+
+void SystemTrayWrapper::setVisible(bool)
+{
+
+
+}
+
+
+void SystemTrayWrapper::closeEvent(QCloseEvent*)
+{
+
+
+}

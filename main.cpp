@@ -43,10 +43,10 @@ int main(int argc, char *argv[])
     {
         SystemTrayWrapper *  stw = new SystemTrayWrapper();
         QApplication::setQuitOnLastWindowClosed(false);
+        SystemTrayWrapper::connect(stw, &QWidget::close, &app, &QApplication::quit);
         stw->setSysTrayedChildWidget(window);
         window->setParent(stw);
         stw->show();
-        QApplication::connect(stw, &QWidget::close, &app, &QApplication::quit);
     }
     else
     {
